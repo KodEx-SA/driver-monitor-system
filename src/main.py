@@ -18,7 +18,7 @@ def main() -> None:
         while True:
             frame = camera.read_frame()
             if frame is None:
-                print("Failed to read frame -stopping.")
+                print("Failed to read frame - stopping.")
                 break
 
             landmarks = detector.process(frame)
@@ -35,4 +35,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    
