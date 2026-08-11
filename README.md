@@ -2,7 +2,7 @@
 
 Real-time driver fatigue detection using computer vision - built to catch the moment attention starts slipping, before it becomes a crash statistic.
 
-> Most accidents don't happen because people can't drive. They happen because people are tired, distracted, or losing focus. This project uses your device's camera to detect the early physical signs of fatigue — eye closure, yawning, and loss of focus — and raise an alert before it's too late.
+> Most accidents don't happen because people can't drive. They happen because people are tired, distracted, or losing focus. This project uses your device's camera to detect the early physical signs of fatigue - eye closure, yawning, and loss of focus - and raise an alert before it's too late.
 
 ---
 
@@ -25,7 +25,7 @@ Real-time driver fatigue detection using computer vision - built to catch the mo
 
 ## Why This Exists
 
-Fatigue impairs reaction time the same way alcohol does, but it creeps up gradually and drivers routinely misjudge how tired they are. Cameras are cheap, on-device CV models are fast enough to run without a GPU, and the warning signs of drowsiness — slow blinks, yawning, a drifting gaze, a nodding head — are all visible on the face well before a driver consciously notices anything wrong.
+Fatigue impairs reaction time the same way alcohol does, but it creeps up gradually and drivers routinely misjudge how tired they are. Cameras are cheap, on-device CV models are fast enough to run without a GPU, and the warning signs of drowsiness - slow blinks, yawning, a drifting gaze, a nodding head - are all visible on the face well before a driver consciously notices anything wrong.
 
 This system watches for those signs in real time and turns them into a single, understandable risk signal.
 
@@ -57,7 +57,7 @@ MediaPipe Face Mesh locates ~468 facial landmarks per frame, from which we extra
 A geometric ratio of eye height to eye width. It drops sharply when eyes close. Rather than a fixed threshold, each session calibrates a short personal baseline first (a few seconds of normal blinking), since eye shape varies a lot between people.
 
 **3. PERCLOS (Percentage of Eye Closure)**
-Instead of counting "how many frames in a row were the eyes closed," we track the *percentage of time eyes were mostly closed over a rolling window* (e.g. the last 60–90 seconds). This is the same class of metric used in real driver-monitoring research — it's far more resistant to noise than a single-frame trigger.
+Instead of counting "how many frames in a row were the eyes closed," we track the *percentage of time eyes were mostly closed over a rolling window* (e.g. the last 60–90 seconds). This is the same class of metric used in real driver-monitoring research - it's far more resistant to noise than a single-frame trigger.
 
 **4. Mouth Aspect Ratio (MAR)**
 Same idea as EAR, applied to the mouth, to detect yawning.
@@ -66,7 +66,7 @@ Same idea as EAR, applied to the mouth, to detect yawning.
 Landmark positions are used to estimate head pitch/yaw. This catches head-nodding (an early microsleep sign) and gaze-away-from-road behavior without needing a separate detector.
 
 **6. Fatigue Score**
-A weighted composite of PERCLOS, yawn frequency, head-nod frequency, and blink rate — smoothed and decaying over time — produces one 0–100 risk score, rather than four independent alarms fighting for attention.
+A weighted composite of PERCLOS, yawn frequency, head-nod frequency, and blink rate — smoothed and decaying over time - produces one 0–100 risk score, rather than four independent alarms fighting for attention.
 
 **7. State Machine**
 Risk moves through `Normal → Warning → Critical` states with hysteresis: it takes sustained evidence to escalate, and a cooldown to de-escalate. This avoids alert flapping from one noisy frame.
@@ -75,40 +75,40 @@ Risk moves through `Normal → Warning → Critical` states with hysteresis: it 
 
 ## Architecture
 
-Built with clean separation of concerns so each piece can be tested, replaced, or reused independently — no single file should need to know how the others work internally.
+Built with clean separation of concerns so each piece can be tested, replaced, or reused independently - no single file should need to know how the others work internally.
 
 ```
 ┌─────────────────┐
-│  Camera Capture  │   grabs frames, nothing else
+│  Camera Capture │   grabs frames, nothing else
+└────────┬────────┘
+         │
+┌────────▼─────────┐
+│  Face Landmarker │   wraps MediaPipe, outputs raw landmarks
 └────────┬─────────┘
          │
 ┌────────▼─────────┐
-│  Face Landmarker  │   wraps MediaPipe, outputs raw landmarks
+│ Feature Extractor│   EAR, MAR, head pose — pure math, no I/O
 └────────┬─────────┘
          │
 ┌────────▼─────────┐
-│  Feature Extractor│   EAR, MAR, head pose — pure math, no I/O
-└────────┬─────────┘
-         │
-┌────────▼─────────┐
-│  Fatigue Scorer    │   combines features → single risk score + state
+│  Fatigue Scorer  │   combines features → single risk score + state
 └────────┬─────────┘
          │
    ┌─────┴─────┐
 ┌──▼───┐   ┌───▼────┐
-│Alerts │   │ Logger  │   side effects live here, isolated from logic
-└───────┘   └───┬────┘
+│Alerts│   │ Logger │   side effects live here, isolated from logic
+└──────┘   └───┬────┘
                 │
           ┌─────▼─────┐
-          │ Dashboard  │   reads logs, never touches the live pipeline
-          └────────────┘
+          │ Dashboard │   reads logs, never touches the live pipeline
+          └───────────┘
 ```
 
 **Guiding principles:**
-- **Single responsibility** — each module does one job (capture ≠ detection ≠ scoring ≠ alerting).
-- **Pure functions where possible** — feature extraction (EAR/MAR/head pose) takes landmarks in, returns numbers out, with no side effects. Easy to unit test without a camera.
-- **Side effects isolated** — anything that touches hardware, disk, or UI (camera, alerts, logging, dashboard) is kept out of the core detection logic.
-- **Config over hardcoding** — thresholds, window sizes, and alert timings live in one config file, not scattered through the code.
+- **Single responsibility** - each module does one job (capture ≠ detection ≠ scoring ≠ alerting).
+- **Pure functions where possible** - feature extraction (EAR/MAR/head pose) takes landmarks in, returns numbers out, with no side effects. Easy to unit test without a camera.
+- **Side effects isolated** - anything that touches hardware, disk, or UI (camera, alerts, logging, dashboard) is kept out of the core detection logic.
+- **Config over hardcoding** - thresholds, window sizes, and alert timings live in one config file, not scattered through the code.
 
 ---
 
@@ -153,7 +153,7 @@ driver-drowsiness-monitor/
 | Event storage | **SQLite** | Cheap to query even as logs grow, unlike re-loading a growing CSV into memory every refresh |
 | Dashboard | **Streamlit** + **Pandas** | Great fit for the *offline* trends/export view, where rerun-per-interaction isn't a problem |
 
-> Note: the live camera loop and the dashboard are intentionally split into separate processes/entry points — they have very different performance needs and shouldn't compete for the same CPU cycles.
+> Note: the live camera loop and the dashboard are intentionally split into separate processes/entry points - they have very different performance needs and shouldn't compete for the same CPU cycles.
 
 ---
 
@@ -178,13 +178,13 @@ python src/main.py
 streamlit run src/dashboard/app.py
 ```
 
-On first run, sit normally and blink a few times when prompted — this calibrates your personal baseline EAR instead of relying on a fixed threshold.
+On first run, sit normally and blink a few times when prompted - this calibrates your personal baseline EAR instead of relying on a fixed threshold.
 
 ---
 
 ## Configuration
 
-All tunable values live in `src/config.py` — nothing is hardcoded inside detection logic:
+All tunable values live in `src/config.py` - nothing is hardcoded inside detection logic:
 
 ```python
 PERCLOS_WINDOW_SECONDS = 60       # rolling window for eye-closure percentage
@@ -199,7 +199,7 @@ FRAME_SKIP = 2                    # process every Nth frame for performance
 
 ## Dashboard
 
-The Streamlit dashboard reads only from the event log — it never touches the live camera pipeline. It shows:
+The Streamlit dashboard reads only from the event log - it never touches the live camera pipeline. It shows:
 
 - Fatigue score over the course of a session
 - Frequency of eye-closure, yawn, and gaze-away events
@@ -222,13 +222,13 @@ The Streamlit dashboard reads only from the event log — it never touches the l
 
 ## Contributing
 
-This project is being built incrementally, one clear, well-scoped step at a time — favoring readable, testable modules over clever shortcuts. If you'd like to contribute, please keep new logic inside the appropriate layer (detection, scoring, alerts, logging) and avoid mixing side effects into pure calculation functions.
+This project is being built incrementally, one clear, well-scoped step at a time - favoring readable, testable modules over clever shortcuts. If you'd like to contribute, please keep new logic inside the appropriate layer (detection, scoring, alerts, logging) and avoid mixing side effects into pure calculation functions.
 
 ---
 
 ## License
 
-MIT License — free to use, modify, and build on.
+MIT License - free to use, modify, and build on.
 
 ---
 
