@@ -1,5 +1,7 @@
 import cv2
 import mediapipe as mp
+from mediapipe.framework.formats import landmark_pb2
+
 
 class FaceMeshDetector:
     """Detects facial landmarks in a single BGR frame using MediaPipe."""
@@ -39,14 +41,13 @@ class FaceMeshDetector:
     def draw_landmarks(self, frame, face_landmarks) -> None:
         """Draw the face mesh tessellation onto `frame` in place.
 
-        Kept separate from `process()` - detection should work
-        identically whether or not anything gets drawn
+        Kept separate from `process()` on purpose - detection should work
+        identically whether or not anything gets drawn (e.g. in tests, or
+        once we run headless without a display).
         """
         # drawing_utils expects the original NormalizedLandmarkList-style
         # object, so we wrap the raw landmarks back into that shape.
-        landmark_list = mp.framework.formats.landmark_pb2.NormalizedLandmarkList(
-            landmark=face_landmarks
-        )
+        landmark_list = landmark_pb2.NormalizedLandmarkList(landmark=face_landmarks)
         self._mp_drawing.draw_landmarks(
             image=frame,
             landmark_list=landmark_list,

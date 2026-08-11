@@ -1,14 +1,34 @@
-"""
-Step 2 checkpoint: prove face landmark detection works on the live feed.
-You should see a mesh drawn over your face that tracks as you move.
-Press 'q' to quit.
-"""
-
 import cv2
-
 from src import config
 from src.capture.camera import Camera
 from src.detection.face_mesh import FaceMeshDetector
+from src.detection.features import get_face_features
+
+def _draw_features_overlay(frame, avg_ear: float, mar: float) -> None:
+    """Draw the current EAR/MAR values in the corner of the frame.
+
+    Kept as a small standalone function (not a method on any class)
+    since it's pure display logic - it doesn't belong to the camera,
+    the detector, or the feature math.
+    """
+    cv2.putText(
+        frame,
+        f"EAR: {avg_ear:.3f}",
+        (10, 30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 255, 0),
+        2,
+    )
+    cv2.putText(
+        frame,
+        f"MAR: {mar:.3f}",
+        (10, 65),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 255, 0),
+        2,
+    )
 
 
 def main() -> None:
@@ -24,6 +44,8 @@ def main() -> None:
             landmarks = detector.process(frame)
             if landmarks is not None:
                 detector.draw_landmarks(frame, landmarks)
+                features = get_face_features(landmarks)
+                _draw_features_overlay(frame, features.avg_ear, features.mar)
 
             cv2.imshow(config.WINDOW_NAME, frame)
 
