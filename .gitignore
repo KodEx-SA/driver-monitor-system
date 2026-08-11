@@ -1,0 +1,11 @@
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Logged data (not source-controlled)
+data/*.db
+
+# OS/editor cruft
+.DS_Store
+.vscode/
