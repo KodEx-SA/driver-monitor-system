@@ -1,3 +1,16 @@
+"""
+face_mesh.py
+
+Responsibility: wrap MediaPipe Face Mesh so the rest of the app never
+imports `mediapipe` directly. If we ever swap face-landmark models,
+only this file changes — nothing downstream needs to know or care.
+
+This module only detects and hands back landmarks. It does not decide
+what those landmarks mean (that's features.py, Step 3) and it does not
+decide whether to draw them (that's a caller's choice, kept separate so
+this class works the same whether there's a display or not).
+"""
+
 import cv2
 import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
@@ -41,7 +54,7 @@ class FaceMeshDetector:
     def draw_landmarks(self, frame, face_landmarks) -> None:
         """Draw the face mesh tessellation onto `frame` in place.
 
-        Kept separate from `process()` on purpose - detection should work
+        Kept separate from `process()` on purpose — detection should work
         identically whether or not anything gets drawn (e.g. in tests, or
         once we run headless without a display).
         """

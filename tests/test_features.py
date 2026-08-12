@@ -1,16 +1,29 @@
+"""
+test_features.py
+
+Tests for src/detection/features.py — EAR and MAR math.
+
+Because eye_aspect_ratio() and mouth_aspect_ratio() are pure functions
+(coordinates in, float out), we can test them with simple hand-drawn
+points instead of real face landmarks. This is the payoff of keeping
+math separate from mediapipe/camera code in Step 3's design.
+"""
+
 import pytest
+
 from src.detection.features import eye_aspect_ratio, mouth_aspect_ratio
+
 
 def test_eye_aspect_ratio_open_eye():
     # A wide, clearly-open eye: horizontal span of 0.3, vertical span of 0.1
     # on both the inner and outer point pairs.
     eye_points = [
-        (0.0, 0.05), # left corner
-        (0.1, 0.0), # top inner
-        (0.2, 0.0), # top outer
-        (0.3, 0.05), # right corner
-        (0.2, 0.1), # bottom outer
-        (0.1, 0.1), # bottom inner
+        (0.0, 0.05),   # left corner
+        (0.1, 0.0),    # top inner
+        (0.2, 0.0),    # top outer
+        (0.3, 0.05),   # right corner
+        (0.2, 0.1),    # bottom outer
+        (0.1, 0.1),    # bottom inner
     ]
     ear = eye_aspect_ratio(eye_points)
     # vertical gaps (0.1) over horizontal gap (0.3) -> should be a
@@ -40,27 +53,27 @@ def test_eye_aspect_ratio_rejects_wrong_point_count():
 def test_mouth_aspect_ratio_closed_mouth():
     # Resting mouth: small vertical gap relative to width.
     mouth_points = [
-        (0.15, 0.0), # top lip
-        (0.15, 0.02), # bottom lip - small gap
-        (0.0, 0.01), # left corner
-        (0.3, 0.01), # right corner
+        (0.15, 0.0),   # top lip
+        (0.15, 0.02),  # bottom lip — small gap
+        (0.0, 0.01),   # left corner
+        (0.3, 0.01),   # right corner
     ]
     mar = mouth_aspect_ratio(mouth_points)
-    assert mar < 0.15 # small relative to a wide-open mouth
+    assert mar < 0.15  # small relative to a wide-open mouth
 
 
 def test_mouth_aspect_ratio_yawn():
     # Wide open mouth: large vertical gap relative to width.
     mouth_points = [
-        (0.15, 0.0), # top lip
-        (0.15, 0.25), # bottom lip - big gap, i.e. a yawn
-        (0.0, 0.12), # left corner
-        (0.3, 0.12), # right corner
+        (0.15, 0.0),    # top lip
+        (0.15, 0.25),   # bottom lip — big gap, i.e. a yawn
+        (0.0, 0.12),    # left corner
+        (0.3, 0.12),    # right corner
     ]
     mar = mouth_aspect_ratio(mouth_points)
-    assert mar > 0.5 # clearly higher than the closed-mouth case
+    assert mar > 0.5  # clearly higher than the closed-mouth case
 
 
 def test_mouth_aspect_ratio_rejects_wrong_point_count():
     with pytest.raises(ValueError):
-        mouth_aspect_ratio([(0.0, 0.0)] * 3) # only 3 points, needs 4
+        mouth_aspect_ratio([(0.0, 0.0)] * 3)  # only 3 points, needs 4
