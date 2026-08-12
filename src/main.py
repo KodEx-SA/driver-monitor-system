@@ -112,8 +112,12 @@ def main() -> None:
                     baseline_ear=baseline_ear,
                     mar=features.mar,
                 )
-                state = state_machine.update(fatigue_result.score)
-                _draw_monitoring_overlay(frame, features.avg_ear, features.mar, baseline_ear)
+                state = state_machine.update(
+                    fatigue_result.score,
+                    continuous_closed_seconds=fatigue_result.continuous_closed_seconds
+                )
+
+                _draw_monitoring_overlay(frame, fatigue_result, state)
  
             cv2.imshow(config.WINDOW_NAME, frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
