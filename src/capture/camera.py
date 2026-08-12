@@ -1,6 +1,8 @@
 """
+camera.py
+
 Responsibility: open a camera, hand out frames, clean up when done.
-That's it. This module knows nothing about faces, eyes, or fatigue
+That's it. This module knows nothing about faces, eyes, or fatigue —
 keeping it this narrow means it can be swapped (e.g. for a video file,
 or a different camera backend) without touching any detection code.
 """

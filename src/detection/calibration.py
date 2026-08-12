@@ -1,20 +1,33 @@
 """
+calibration.py
+
 Responsibility: learn the driver's personal "eyes open" EAR baseline at
 the start of a session, instead of assuming a fixed threshold works for
 everyone.
 
-This module only collects samples and computes a number, it doesn't
+Why this matters: EAR values vary meaningfully between people — eye
+shape, camera angle, distance from the lens, glasses. A hardcoded
+"below 0.2 = closed" threshold that works for one face can misfire
+constantly for another. Calibration solves this by measuring *this*
+driver's own resting-open value first, so every later comparison is
+relative ("how far below your own baseline are you right now?") rather
+than absolute.
+
+This module only collects samples and computes a number — it doesn't
 touch the camera, the detector, or drawing. That keeps it testable with
-plain float samples.
+plain float samples, same as features.py.
 """
 
 import time
+
 import numpy as np
+
 from src import config
 
+
 class BaselineCalibrator:
-    """
-    Collects EAR samples over a fixed duration, then computes a baseline.
+    """Collects EAR samples over a fixed duration, then computes a baseline.
+
     Usage:
         calibrator = BaselineCalibrator()
         calibrator.start()
@@ -57,8 +70,10 @@ class BaselineCalibrator:
         return min(self._elapsed_seconds() / self._duration_seconds, 1.0)
 
     def compute_baseline(self) -> float:
-        """
-        Return the baseline EAR from collected samples.
+        """Return the baseline EAR from collected samples.
+
+        Raises if called with no samples — calibration should always
+        collect at least a few frames before this is called.
         """
         if not self._samples:
             raise RuntimeError(

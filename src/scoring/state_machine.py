@@ -1,14 +1,24 @@
 """
+state_machine.py
+
 Responsibility: turn a fatigue score into a Normal -> Warning -> Critical
 state, with hysteresis so a single noisy score reading can't flip the
 state back and forth.
 
+Without hysteresis, a score bouncing around a threshold (say, 39 -> 41
+-> 38 -> 42) would flip the state every frame, which would be useless
+for driving alerts off of. Instead, a new state must be "pending" for
+STATE_SUSTAIN_SECONDS before it actually takes effect. This applies to
+de-escalation too — dropping back to Normal also requires sustained
+evidence, not just one good frame after a bad stretch.
+
 This module only tracks state. It doesn't decide what an alert should
-do about a given state.
+do about a given state — that's alert_manager.py.
 """
 
 import time
 from enum import Enum
+
 from src import config
 
 
@@ -46,13 +56,12 @@ class FatigueStateMachine:
         continuous_closed_seconds: float = 0.0,
         timestamp: float | None = None,
     ) -> FatigueState:
-        """
-        Feed in the latest fatigue score. Returns the current state
+        """Feed in the latest fatigue score. Returns the current state
         (which may or may not have just changed).
 
         `continuous_closed_seconds` is a fast path: if the eyes have
         been shut, uninterrupted, for at least MICROSLEEP_SECONDS, that
-        alone is conclusive evidence of a microsleep - it doesn't need
+        alone is conclusive evidence of a microsleep — it doesn't need
         to "sustain" any further to be believed, so it jumps straight
         to Critical rather than waiting out the usual hysteresis delay.
         """
@@ -67,18 +76,18 @@ class FatigueStateMachine:
         target_state = self._classify(score)
 
         if target_state == self._state:
-            # Already there - clear any pending transition away from it.
+            # Already there — clear any pending transition away from it.
             self._pending_state = None
             self._pending_since = None
             return self._state
 
         if target_state != self._pending_state:
-            # A new candidate transition - start the clock on it.
+            # A new candidate transition — start the clock on it.
             self._pending_state = target_state
             self._pending_since = ts
             return self._state
 
-        # Same candidate as last time - check if it's been sustained long enough.
+        # Same candidate as last time — check if it's been sustained long enough.
         if ts - self._pending_since >= self._sustain_seconds:
             self._state = target_state
             self._pending_state = None
