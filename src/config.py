@@ -61,3 +61,14 @@ CRITICAL_SCORE_THRESHOLD = 70.0
 # actually changes. This is the hysteresis that stops one noisy score
 # spike from flipping Normal -> Critical -> Normal within a second.
 STATE_SUSTAIN_SECONDS = 3.0
+
+# Microsleep fast-path
+
+# PERCLOS is a 60s rolling trend — deliberately slow to react, since
+# that's what makes it noise-resistant. But it's the wrong tool for
+# "eyes have been shut for the last 2 seconds, right now" — that needs
+# an instant response, not a rolling average catching up. This is a
+# separate, faster signal: continuous, uninterrupted closure duration.
+# At or above this many seconds, we treat it as conclusive on its own
+# and skip the state machine's hysteresis delay entirely.
+MICROSLEEP_SECONDS = 1.5
