@@ -28,3 +28,36 @@ EAR_CALIBRATION_SECONDS = 15.0
 # calibration; the 90th percentile instead reflects where EAR sits when the
 # eyes are genuinely open, ignoring the brief low dips from blinking.
 EAR_BASELINE_PERCENTILE = 90.0
+
+
+# PERCLOS settings
+ 
+# Rolling window over which we compute "what percentage of recent time
+# were the eyes closed". 60s matches the window used in real drowsiness
+# research (PERCLOS) - long enough to smooth out blinks and single-frame
+# jitter, short enough to react to a genuinely tired driver within a minute.
+PERCLOS_WINDOW_SECONDS = 60.0
+ 
+# A frame counts as "eyes closed" for PERCLOS purposes when EAR drops
+# below this fraction of the calibrated baseline. 0.3 means the eyes need
+# to be about 70% closed relative to the driver's own open-eye baseline
+# deliberately stricter than "below baseline", so ordinary partial
+# closure (looking down, a slow blink) doesn't get counted as "closed".
+EYE_CLOSED_OPENNESS_RATIO = 0.3
+ 
+# Yawn settings
+ 
+YAWN_MAR_THRESHOLD = 0.6      # MAR above this counts as a yawn in progress
+YAWN_WINDOW_SECONDS = 60.0    # how far back yawns still count toward the score
+YAWN_SCORE_WEIGHT = 15.0      # points added to the fatigue score per yawn in the window
+YAWN_SCORE_CAP = 30.0         # yawns alone can never push the score higher than this
+ 
+# Fatigue state machine
+ 
+WARNING_SCORE_THRESHOLD = 40.0
+CRITICAL_SCORE_THRESHOLD = 70.0
+ 
+# A score must stay past a threshold for this long before the state
+# actually changes. This is the hysteresis that stops one noisy score
+# spike from flipping Normal -> Critical -> Normal within a second.
+STATE_SUSTAIN_SECONDS = 3.0
