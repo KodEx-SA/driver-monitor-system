@@ -1,14 +1,6 @@
 """
-Responsibility: track PERCLOS (PERcentage of eye CLOSure) -> the fraction
+Responsibility: track PERCLOS (PERcentage of eye CLOSure) - the fraction
 of the last N seconds during which the eyes were classified as closed.
-
-Why PERCLOS instead of "eyes closed for K consecutive frames": a
-frame-counter approach is fragile -> it depends entirely on framerate,
-and a single misdetected frame breaks the streak.
-PERCLOS instead asks a more robust question: over a meaningful window of time, 
-how much of it was spent with eyes closed? That smooths out blinks and single-frame
-noise while still reacting to sustained drowsiness within about a
-minute.
 """
 
 import time
@@ -16,8 +8,7 @@ from collections import deque
 from src import config
 
 class PerclosTracker:
-    """
-    Maintains a rolling window of closed/open classifications and
+    """Maintains a rolling window of closed/open classifications and
     reports the fraction of the window that was "closed".
     """
 
@@ -43,9 +34,44 @@ class PerclosTracker:
         """
         Fraction of samples currently in the window that were closed,
         from 0.0 (never closed) to 1.0 (closed the entire window).
-        Returns 0.0 if no samples have been added yet
+
+        Returns 0.0 if no samples have been added yet, rather than
+        raising - an empty window reasonably means "no evidence of
+        closure observed", not an error state.
         """
         if not self._samples:
             return 0.0
         closed_count = sum(1 for _, is_closed in self._samples if is_closed)
         return closed_count / len(self._samples)
+
+class ClosureDurationTracker:
+    """
+    Tracks how long the eyes have been continuously closed, right now.
+    """
+
+    def __init__(self) -> None:
+        self._closed_since: float | None = None
+        self._current_duration: float = 0.0
+
+    def add_sample(self, is_closed: bool, timestamp: float | None = None) -> float:
+        """
+        Record one frame's closed/open classification.
+        Returns the current continuous-closure duration in seconds
+        (0.0 if the eyes are currently open).
+        """
+        ts = timestamp if timestamp is not None else time.monotonic()
+
+        if is_closed:
+            if self._closed_since is None:
+                self._closed_since = ts
+            self._current_duration = ts - self._closed_since
+        else:
+            self._closed_since = None
+            self._current_duration = 0.0
+
+        return self._current_duration
+
+    @property
+    def current_duration(self) -> float:
+        """Seconds the eyes have been continuously closed right now."""
+        return self._current_duration
