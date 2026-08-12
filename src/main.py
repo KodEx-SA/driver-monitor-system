@@ -4,6 +4,14 @@ from src.capture.camera import Camera
 from src.detection.calibration import BaselineCalibrator
 from src.detection.face_mesh import FaceMeshDetector
 from src.detection.features import get_face_features
+from src.scoring.fatigue_score import FatigueScorer
+from src.scoring.state_machine import FatigueState, FatigueStateMachine
+
+_STATE_COLORS = {
+    FatigueState.NORMAL: (0, 255, 0), # green
+    FatigueState.WARNING: (0, 200, 255), # amber
+    FatigueState.CRITICAL: (0, 0, 255), # red
+}
 
 def _draw_calibration_overlay(frame, progress: float) -> None:
     """Show a simple calibration progress message"""
@@ -84,6 +92,9 @@ def main() -> None:
             cv2.destroyAllWindows()
             return
         print(f"Calibration complete. Baseline EAR: {baseline_ear:.3f}")
+
+        scorer = FatigueScorer()
+        state_machine = FatigueStateMachine()
  
         while True:
             frame = camera.read_frame()
@@ -95,6 +106,13 @@ def main() -> None:
             if landmarks is not None:
                 detector.draw_landmarks(frame, landmarks)
                 features = get_face_features(landmarks)
+
+                fatigue_result = scorer.update(
+                    avg_ear=features.avg_ear,
+                    baseline_ear=baseline_ear,
+                    mar=features.mar,
+                )
+                state = state_machine.update(fatigue_result.score)
                 _draw_monitoring_overlay(frame, features.avg_ear, features.mar, baseline_ear)
  
             cv2.imshow(config.WINDOW_NAME, frame)
