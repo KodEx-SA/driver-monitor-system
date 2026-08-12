@@ -3,25 +3,20 @@ Responsibility: turn a fatigue score into a Normal -> Warning -> Critical
 state, with hysteresis so a single noisy score reading can't flip the
 state back and forth.
 
-Without hysteresis, a score bouncing around a threshold (say, 39 -> 41
--> 38 -> 42) would flip the state every frame, which would be useless
-for driving alerts off of. Instead, a new state must be "pending" for
-STATE_SUSTAIN_SECONDS before it actually takes effect. This applies to
-de-escalation too - dropping back to Normal also requires sustained
-evidence, not just one good frame after a bad stretch.
-
 This module only tracks state. It doesn't decide what an alert should
-do about a given state - that's alert_manager.py.
+do about a given state.
 """
 
 import time
 from enum import Enum
 from src import config
 
+
 class FatigueState(Enum):
     NORMAL = "normal"
     WARNING = "warning"
     CRITICAL = "critical"
+
 
 class FatigueStateMachine:
     """Classifies a fatigue score into a state, with hysteresis."""
@@ -45,12 +40,30 @@ class FatigueStateMachine:
         """The current, confirmed state (not a pending/unconfirmed one)."""
         return self._state
 
-    def update(self, score: float, timestamp: float | None = None) -> FatigueState:
+    def update(
+        self,
+        score: float,
+        continuous_closed_seconds: float = 0.0,
+        timestamp: float | None = None,
+    ) -> FatigueState:
         """
         Feed in the latest fatigue score. Returns the current state
         (which may or may not have just changed).
+
+        `continuous_closed_seconds` is a fast path: if the eyes have
+        been shut, uninterrupted, for at least MICROSLEEP_SECONDS, that
+        alone is conclusive evidence of a microsleep - it doesn't need
+        to "sustain" any further to be believed, so it jumps straight
+        to Critical rather than waiting out the usual hysteresis delay.
         """
         ts = timestamp if timestamp is not None else time.monotonic()
+
+        if continuous_closed_seconds >= config.MICROSLEEP_SECONDS:
+            self._state = FatigueState.CRITICAL
+            self._pending_state = None
+            self._pending_since = None
+            return self._state
+
         target_state = self._classify(score)
 
         if target_state == self._state:
