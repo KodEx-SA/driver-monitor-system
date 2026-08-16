@@ -1,43 +1,26 @@
 """
-fatigue_score.py
-
 Responsibility: combine PERCLOS and recent yawn activity into a single
 0-100 fatigue score.
-
-Design choice worth calling out: PERCLOS is the primary driver of the
-score (it's the more research-backed signal), and yawning adds a capped
-bonus on top. The cap matters — without it, someone yawning repeatedly
-while otherwise perfectly alert (e.g. bored, not tired) could max out
-the score on yawns alone, which isn't the story yawning actually tells
-on its own. PERCLOS being high is a much stronger fatigue signal than
-yawning being frequent.
-
-This module only computes a number. It doesn't decide what to do about
-a high score — that's state_machine.py (whether the number represents
-Normal/Warning/Critical) and, later, alert_manager.py (what to actually
-do about it).
 """
 
 import time
 from collections import deque
 from dataclasses import dataclass
-
 from src import config
 from src.scoring.perclos import ClosureDurationTracker, PerclosTracker
-
 
 @dataclass(frozen=True)
 class FatigueScore:
     """A snapshot of the fatigue signal at a single point in time."""
 
-    perclos: float             # 0.0-1.0, fraction of recent time eyes were closed
-    yawn_count_in_window: int  # yawn events in the last YAWN_WINDOW_SECONDS
-    continuous_closed_seconds: float  # how long eyes have been shut, right now
-    score: float                # 0-100 composite fatigue score
-
+    perclos: float                      # 0.0-1.0, fraction of recent time eyes were closed
+    yawn_count_in_window: int           # yawn events in the last YAWN_WINDOW_SECONDS
+    continuous_closed_seconds: float    # how long eyes have been shut, right now
+    score: float                        # 0-100 composite fatigue score
 
 class FatigueScorer:
-    """Combines EAR and MAR readings, over time, into a fatigue score.
+    """
+    Combines EAR and MAR readings, over time, into a fatigue score.
 
     Usage: call update() once per frame with the current EAR/MAR and the
     calibrated baseline EAR. It maintains all rolling state internally.
@@ -82,7 +65,7 @@ class FatigueScorer:
         mouth_is_open = mar > config.YAWN_MAR_THRESHOLD
 
         # Only count the rising edge (mouth just opened past threshold),
-        # not every frame the mouth happens to stay open — otherwise one
+        # not every frame the mouth happens to stay open - otherwise one
         # long yawn would be counted dozens of times.
         if mouth_is_open and not self._mouth_was_open:
             self._yawn_timestamps.append(ts)
